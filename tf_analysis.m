@@ -14,7 +14,8 @@ abs_TFD = abs(tfd(1:nfreq/2+1,:));
 % Extract the fundamental tone and amplitude
 [fond_A, fond_F] = max(flipud(abs_TFD));
 fond_F = f_red(fond_F);
-fond_F_tone = log2(fond_F/440)*12;
+fond_F_tone = round(log2(fond_F/440)*12);
+fond_F = 440*2.^(fond_F_tone/12);
 
 % Plots
 close all;
