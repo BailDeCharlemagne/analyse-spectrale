@@ -32,12 +32,20 @@ figure;
 %plot(t, noisy_flute) 
 %title('Signal bruité de la flute');  
 
+%%% Split flute signal into 30ms intervals 
+
+interval = 30*10^(-3); 
+interval_ech = interval*fs;
+nbIntervals = floor(length(flute_t)/interval_ech); 
+flute_ech = zeros(nbIntervals, interval_ech);
+for i=1:nbIntervals
+  flute_ech(i,:) = flute_t((i-1)*interval_ech+1:i*interval_ech); 
+end; 
 
 
-
-#########################################################
-##########            PISARENKO               ###########
-#########################################################
+###########################################################################
+##########            PISARENKO SUR 4 A 6 SECONDES              ###########
+###########################################################################
 
 %%% On s'intéresse à la séparation haute fréquence entre 4 et 6 secondes.
 
@@ -65,12 +73,9 @@ title('Paramètre 0')
 index_pks_pisa1 = ff_pisa1(loc_pisa1)
 
 # Pisarenko 2 : 
-[ff_pisa_2, mydsp_pisa_2] = pisarenko_real(flute_morceau, 100, fs, 2); % donne enveloppe interpolée
-figure; 
-plot(ff_pisa_real_2, mydsp_pisa_real_2);
-title('Paramètre 2') 
+[ff_pisa2, mydsp_pisa2] = pisarenko_real(flute_morceau, 100, fs, 1,1); % donne enveloppe interpolée
 % On cherche un vecteur de pics de fréquences 
-[pks_pisa2 loc_pisa2] = findpeaks(mydsp_pisa_real_2); 
-index_pks_pisa_2 = ff_pisa_real_1(loc_pisa2) 
+[pks_pisa2 loc_pisa2] = findpeaks(mydsp_pisa2); 
+index_pks_pisa_2 = ff_pisa2(loc_pisa2) 
  
 
