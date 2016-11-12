@@ -143,15 +143,15 @@ elseif (musicway==2)
   mydsp = interp1 (freqs, ampl, ff, 'linear');
 end;
 
-figure(1);
-clf;
-grid on;
-hold on;
+%figure(1);
+%clf;
+%grid on;
+%hold on;
 %semilogy(ff,mydsp,'linewidth',2);
-plot(ff,mydsp,'linewidth',2);
-xlabel('frequency (in Hz)','fontsize',20);
-ylabel('magnitude','fontsize',20);
-xlim([0 1000]);
-hold off;
-drawnow;
+%plot(ff,mydsp,'linewidth',2);
+%xlabel('frequency (in Hz)','fontsize',20);
+%ylabel('magnitude','fontsize',20);
+%xlim([0 1000]);
+%hold off;
+%drawnow;
 
