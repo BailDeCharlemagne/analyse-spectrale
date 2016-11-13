@@ -1,13 +1,18 @@
-function tf_analysis()
+function [toneTxt, tone, duration] = tf_analysis()
     close all;
     clf;
 
     [xx, fe] = audioread('fluteircam.wav');
 
     figure(1)
-    [xx_reconstructed] = fond_extract(xx, fe, 500, 1);
+    [xx_reconstructed, fond_F, fond_F_tone, fond_A] = fond_extract(xx, fe, 500, 1);
     audiowrite('fluteircam-reconstruction.wav', xx_reconstructed, fe);
+    
+    figure(5);
+    [tone, duration, toneTxt] = create_partition(fond_F_tone, fond_A, fe*length(fond_F_tone)/length(xx), 1);
 
+    return;
+    
     old_xx = xx;
     Pxx = norm(xx)^2/length(xx);
     PxxdB = pow2db(Pxx);
@@ -28,11 +33,48 @@ function tf_analysis()
     audiowrite('fluteircam-noisy-reconstruction.wav', xx_reconstructed, fe);
 end
 
+function [tone, duration, toneTxt] = create_partition(fond_F_tone, fond_A, fe, do_plot)
+    tone = (fond_F_tone(1));
+    duration = (1);
+    amplitude = (fond_A(1));
+    n = 1;
+    for i = 2:length(fond_F_tone)
+        if (tone(n) == fond_F_tone(i))
+            duration(n) = duration(n) + 1;
+            amplitude(n) = ((n-1)*amplitude(n) + fond_A(i)) / n;
+        else
+            n = n + 1;
+            tone(n) = fond_F_tone(i);
+            duration(n) = 1;
+            amplitude(n) = fond_A(i);
+        end
+    end
+    duration = duration / fe;
+    
+    if (do_plot)
+        subplot(3,1,1)
+        bar(tone, 'blue');
+        title('Partition reconstruction');
+        ylabel('Difference in semitones with LA 440');
+        subplot(3,1,2)
+        bar(duration, 'red');
+        ylabel('Duration (s)');
+        subplot(3,1,3)
+        bar(amplitude, 'green');
+        ylabel('Amplitude');
+        hold off
+    end
+    
+    tones = cellstr(['La  '; 'Sib '; 'Si  '; 'Do  '; 'Do# '; 'Ré  '; 'Mib '; 'Mi  '; 'Fa  '; 'Fa# '; 'Sol '; 'Sol#']);
+    toneTxt = tones(mod(tone, 12)+1);
+    %toneTxt = 440*2.^(tone/12);
+end
+
 function [xx_reconstructed, fond_F, fond_F_tone, fond_A, abs_TFD] = fond_extract(xx, fe, w, do_plot)
 
     f_Subsampling = 4;   % sub-sampling factor
-    nfreq = 64*64;       % number of samples to compute in frequency
-    decf = 16;           % sub-sampling factor in time of the stft
+    nfreq = 512*64;       % number of samples to compute in frequency
+    decf = 32;            % sub-sampling factor in time of the stft
 
     % Computes the short-time Fourier transform
     xx2 = xx(1:f_Subsampling:end);
@@ -44,12 +86,22 @@ function [xx_reconstructed, fond_F, fond_F_tone, fond_A, abs_TFD] = fond_extract
     [fond_A, fond_F] = max(flipud(abs_TFD));
     fond_F = f_red(fond_F);
     fond_F_tone = round(log2(fond_F/440)*12);
+%     figure(6)
+%     hold on
+%     for t = -30:30
+%         toto = fond_F(fond_F_tone==t);
+%         histogram(toto);
+%     end
+%     hold off
+% 
+%     figure(1)
     fond_F = 440*2.^(fond_F_tone/12);
     
     if (do_plot)
         subplot(2,1,1);
         imagesc(t, f_red, flipud(abs_TFD));
-        title('Short-time Fourrier transform');
+        str = sprintf('Short-time Fourrier transform (w = %ims)', round(w/(fe/f_Subsampling)*1000));
+        title(str);
         xlabel('Time (s)');
         ylabel('Frequency (Hz)');
 
@@ -70,7 +122,7 @@ function [xx_reconstructed, fond_F, fond_F_tone, fond_A, abs_TFD] = fond_extract
     xx_reconstructed = zeros(length(xx), 1);
     for ii = 1:length(xx)
         tt = ii / fe;
-        tt_red = round(tt * f_Subsampling * decf * 8);
+        tt_red = round(tt * f_Subsampling * decf * 2);
         tt_red = max(1,min(tt_red, length(fond_A)));
         xx_reconstructed(ii,1) = fond_A(tt_red) * sin (2*pi*fond_F(tt_red) * tt);
     end

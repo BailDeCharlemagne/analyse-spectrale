@@ -16,7 +16,7 @@
 %%%
 %%% S. Rossignol -- 2012
 
-function [aa, sigma2, ref, ff, mydsp] = mylevinsondurbin (xx, pp, fe)
+function [aa, sigma2, ref, ff, mydsp] = mylevinsondurbin (xx, pp, fe, do_plot)
 
 acf = xcorr(xx, pp+1, 'biased'); %% autocorr\'elation
 acf(1:pp+1) = [];                %% on enl\`eve la partie n\'egative
@@ -29,7 +29,7 @@ sigma2 = real( ( 1 - gg*conj(gg)) * acf(1) ); %% real : enl\`eve une \'eventuell
                                               %%   partie imaginaire r\'esiduelle
 ref(1) = gg;
 for tt = 2 : pp
-  gg = -(acf(tt+1) + aa * acf(tt:-1:2)') / sigma2;
+  gg = -(acf(tt+1) + aa * acf(tt:-1:2)) / sigma2;
   aa = [ aa + gg*conj(aa(tt-1:-1:1)), gg ];
   sigma2 = sigma2 * ( 1 - real(gg*conj(gg)) );
   ref(tt) = gg;
@@ -38,20 +38,19 @@ aa = [1, aa];
 
 %%% densit\'e spectrale de puissance
 interm2=-j*2*pi/fe*[1:pp];
-df=0.9765625;      %%% la dsp est calcul\'ee tous les df Hz
+df=0.1;      %%% la dsp est calcul\'ee tous les df Hz
 ff=-fe/2:df:fe/2;
 
 interm3=interm2'*ff;
 interm=1.+aa(2:pp+1)*exp(interm3);
 mydsp = sigma2./(interm.*conj(interm));
 
-figure(1);
-clf;
-grid on;
-hold on;
-plot(ff,mydsp,'linewidth',2);
-xlabel('frequency (in Hz)','fontsize',20);
-ylabel('magnitude','fontsize',20);
-hold off;
-drawnow;
+mydsp = mydsp(ff>0);
+ff = ff(ff>0);
+
+if (do_plot)
+    plot(ff,mydsp,'linewidth',2);
+    xlabel('frequency (in Hz)','fontsize',20);
+    ylabel('magnitude','fontsize',20);
+end
 
