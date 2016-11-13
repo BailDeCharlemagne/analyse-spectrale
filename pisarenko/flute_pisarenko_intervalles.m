@@ -21,17 +21,17 @@ f_subsampling = 4;
 %plot(t, flute);
 %title('Signal pur de la flute - non bruité'); 
 
-%% Add noise to signal 
-
-Eb_No = 2; %en dB 
-Eb = abs((norm(flute)^2))/length(flute);
-No = Eb_No*log(-Eb/10); 
-variance = No/2; %Revoir avec Telecom
-bruit = randn(length(flute),1)*variance; 
-noisy_flute = bruit + flute;
-%figure; 
-%plot(t, noisy_flute) 
-%title('Signal bruité de la flute');  
+%%% Add noise to signal 
+%
+%Eb_No = 2; %en dB 
+%Eb = abs((norm(flute)^2))/length(flute);
+%No = Eb_No*log(-Eb/10); 
+%variance = No/2; %Revoir avec Telecom
+%bruit = randn(length(flute),1)*variance; 
+%noisy_flute = bruit + flute;
+%%figure; 
+%%plot(t, noisy_flute) 
+%%title('Signal bruité de la flute');  
 
 
  
@@ -92,10 +92,11 @@ for i=1:nbIntervals
   str = ['done ', num2str(i)];
   disp(str)
 end;
+
 % Display
 
 figure;
-scatter(M_relevant); 
+mesh(M_relevant); 
 xlabel('Fréquence'); ylabel('Intervalle n°'); zlabel('Amplitude de la DSP'); 
 rotate3d on; 
 
