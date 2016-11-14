@@ -23,14 +23,6 @@ title('Signal pur de la flute - non bruité');
  
 %% Partition de référence 
 partition_ref = [440,494,523,659,415,440,349,330,370,415,440,494,587,698,659,587,494,523,440,494] 
-
-%% Gamme 
-n = -10:1:20;
-f0 = 440; % La 
-gamme = [];
-for i=1:length(n)
-  gamme(i) = f0*2^(n(i)/12)
-end; 
  
  
 ###########################################################################
@@ -56,7 +48,7 @@ end;
 %% Pisarenko sur ces petits signaux 
 
 % Matrice pour construire le temps fréquence amplitude
-M_full = zeros(nbIntervals, fs/8);
+M_full = zeros(nbIntervals, fs/8); %lignes n° échantillon + colonnes fréquence 
 
 for i=1:nbIntervals
   # Pisarenko 1 
@@ -119,7 +111,38 @@ plot((1:nbIntervals)*interval,freq_fund_round_filter);
 ylim([0 1000]); 
 legend('Signal approché au demi-ton, filtré sur les HF'); 
 xlabel('Temps (s)'); ylabel('Fréquence (Hz)');
-title('Temps-fréquence par Pisarenko - Ordre 50'); 
+title('Temps-fréquence par Pisarenko - Ordre 70'); 
+
+
+%% On applique le traitement de fréquences sur les deux premières harmoniques aussi
+freq_harmonique1 = freq_max_ampl(:,2);
+freq_harmonique2 = freq_max_ampl(:,3);
+
+n1(1:nbIntervals) = round(12*log2(freq_harmonique1/f0));
+n2(1:nbIntervals) = round(12*log2(freq_harmonique2/f0)); 
+
+freq_h1_round(1:nbIntervals) = f0*2.^(n1(1:nbIntervals)/12);
+freq_h2_round(1:nbIntervals) = f0*2.^(n2(1:nbIntervals)/12);
+
+freq_h1_round_filter = zeros(size(freq_h1_round));
+freq_h2_round_filter = zeros(size(freq_h2_round));
+
+freq_fund_h1_filter(1) = freq_h1_round(1);
+freq_fund_h2_filter(1) = freq_h2_round(1);
+  
+for i=2:nbIntervals
+  if freq_h1_round(i) > freq_max 
+      freq_h1_round_filter(i) = freq_h1_round_filter(i-1);
+  else
+    freq_h1_round_filter(i) = freq_h1_round(i); 
+  end;
+  if freq_h2_round(i) > freq_max 
+      freq_h2_round_filter(i) = freq_h2_round_filter(i-1);
+  else
+    freq_h2_round_filter(i) = freq_h2_round(i); 
+  end;
+end; 
+
 
 %% Display pour slide 17
 %
@@ -139,3 +162,42 @@ title('Temps-fréquence par Pisarenko - Ordre 50');
 ###########################################################################
 ##########                    RECONSTRUCTION                 ##############
 ###########################################################################
+
+% Avec la fondamentale seulement
+
+t_reconstructed = (1:nbIntervals*interval_ech)/fs;
+flute_reconstructed = ones(1, nbIntervals*interval_ech);
+ampl_fund = max_pics(:,1);
+
+for i=1:nbIntervals
+  flute_reconstructed((i-1)*interval_ech+1:i*interval_ech) = ampl_fund(i)*cos(2*pi*freq_fund_round_filter(i)/fs*(((i-1)*interval_ech+1):(i*interval_ech)));
+end; 
+
+audiowrite('fluteircam-reconstruction.wav', flute_reconstructed, fs);
+
+plot(t,flute);
+hold on;
+plot(t_reconstructed, flute_reconstructed, 'r');
+legend('flute origine', 'reconstruction du signal avec f0')
+xlabel('Temps (s)'); ylabel('Amplitude'); 
+title('Signal reconstruit en utilisant des fondamentales de Pisarenko vs Signal d origine');
+hold off;
+
+% Avec deux harmoniques
+
+ampl_harmonique1 = max_pics(:,2); 
+ampl_harmonique2 = max_pics(:,3); 
+
+for i=1:nbIntervals
+  flute_reconstructed_f0h1h2((i-1)*interval_ech+1:i*interval_ech) = ampl_fund(i)*cos(2*pi*freq_fund_round_filter(i)/fs*(((i-1)*interval_ech+1):(i*interval_ech))) + ampl_harmonique1(i)*cos(2*pi*freq_h1_round_filter(i)/fs*(((i-1)*interval_ech+1):(i*interval_ech))) + ampl_harmonique2(i)*cos(2*pi*freq_h1_round_filter(i)/fs*(((i-1)*interval_ech+1):(i*interval_ech)));
+end; 
+
+audiowrite('fluteircam-reconstruction-h1h2.wav', flute_reconstructed_f0h1h2, fs);
+
+plot(t_reconstructed, flute_reconstructed_f0h1h2, 'g');
+hold on;
+plot(t,flute, 'b');
+legend('reconstruction du signal avec f0, h1, h2', 'flute origine')
+xlabel('Temps (s)'); ylabel('Amplitude'); 
+title('Signal reconstruit en utilisant la fondamentale et les deux premières harmoniques de Pisarenko vs Signal d origine');
+hold off;
