@@ -36,9 +36,11 @@ G = fliplr(linspace(0,1,length(order))) .';
 myGmap = horzcat(zeros(size(G)), G, zeros(size(G))); 
  
 figure;
+power_density = []; 
 
 for i = 1:length(order)
   % Utilisation de Pisarenko 
+  [ff_pisa, densite_puissance] = mypisarenko(flute_t, order(i), fs, 0); % donne ka densité spec
   [ff_pisa, spectre_pisa] = mypisarenko(flute_t, order(i), fs, 1); % donne spectre de raies
   [ff_pisa, enveloppe_interpolee] = mypisarenko(flute_t, order(i), fs, 2); % donne enveloppe interpolée
   subplot(length(order),1,i);
@@ -46,6 +48,8 @@ for i = 1:length(order)
   plot(ff_pisa, enveloppe_interpolee, 'color', myGmap(i,:));
   hold off;
   str = ['Spectre de raies et Enveloppe Interpolée pour p = ', num2str(order(i))];
+  % Quelle est la densité spectrale de puissance ?
+  power_density = [power_density densite_puissance]; 
   % Quelles sont les fréquences pour lesquelles on observe des pics ?
   [pks_pisa loc_pks] = findpeaks(spectre_pisa);
   %peaks{i} = (pks_pisa,ff_pisa(loc_pks));
@@ -57,4 +61,5 @@ for i = 1:length(order)
   xlim([-5000, 5000]); 
 end;
 
-freq; 
+freq
+power_density
